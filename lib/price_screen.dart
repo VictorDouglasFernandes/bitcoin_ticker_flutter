@@ -14,7 +14,7 @@ class PriceScreen extends StatefulWidget {
 class _PriceScreenState extends State<PriceScreen> {
   String? selectedCurrency = 'USD';
 
-  var data;
+  Map<String,dynamic> coinDataMap = {};
 
   DropdownButton<String> androidDropdownItems() {
     List<DropdownMenuItem<String>> items = [];
@@ -53,35 +53,62 @@ class _PriceScreenState extends State<PriceScreen> {
     );
   }
 
-  void getCardData() async {
-    // for(String crypto in cryptoList){
-    //   var data = await CoinData().getCoinData('ETH', 'ZAR');
-    // }
-    data = await CoinData().getCoinData('ETH', 'ZAR');
-    setState(() {
-      data = data;
-    });
-    print(data['asset_id_base']);
-    // return CoinCard(
-    //     criptoName: data.asset_id_base,
-    //     currencyName: data.asset_id_quote,
-    //     value: data.rate
-    // );
+  generateDefaultListValue() {
+    for(String crypto in cryptoList){
+      coinDataMap[crypto] = {
+        'cryptoName': crypto,
+        'currencyName': selectedCurrency,
+        'value': 0.0
+      };
+    }
   }
 
-  Widget getOneCard() {
-    return CoinCard(
-        criptoName: data['asset_id_base'],
-        currencyName: data['asset_id_quote'],
-        value: data['rate']
-    );
+  dynamic getCardData(String crypto, String? currency) async {
+    var coinData = await CoinData().getCoinData(crypto, currency);
+    return coinData;
+
+  }
+
+  void getDataUpdateUI(){
+    for(String crypto in cryptoList){
+      getCardData(crypto, selectedCurrency).then(
+          (res) {
+            updateUI(res);
+          }
+      );
+    }
+  }
+
+  void updateUI(dynamic coinData) {
+    setState(() {
+      coinDataMap[coinData['asset_id_base']] = {
+        'cryptoName': coinData['asset_id_base'],
+        'currencyName': coinData['asset_id_quote'],
+        'value': double.parse(coinData['rate'].toStringAsFixed(2))
+      };
+    });
+  }
+
+  List<Widget> getCards() {
+    List<Widget> cards = [];
+    for(String crypto in coinDataMap.keys){
+      cards.add(
+        CoinCard(
+            criptoName: coinDataMap[crypto]['cryptoName'],
+            currencyName: coinDataMap[crypto]['currencyName'],
+            value: coinDataMap[crypto]['value']
+        )
+      );
+    }
+    return cards;
   }
 
   @override
   void initState() {
     // TODO: implement initState
     super.initState();
-    getCardData();
+    generateDefaultListValue();
+    getDataUpdateUI();
   }
 
   @override
@@ -98,24 +125,7 @@ class _PriceScreenState extends State<PriceScreen> {
             padding: EdgeInsets.fromLTRB(18.0, 18.0, 18.0, 0),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.stretch,
-              children: [
-                CoinCard(
-                  criptoName: 'BTC',
-                  currencyName: 'USD',
-                  value: 1,
-                ),
-                CoinCard(
-                  criptoName: 'ETH',
-                  currencyName: 'USD',
-                  value: 1,
-                ),
-                CoinCard(
-                  criptoName: 'LTC',
-                  currencyName: 'USD',
-                  value: 1,
-                ),
-                getOneCard()
-              ],
+              children: getCards(),
             ),
           ),
           Container(
