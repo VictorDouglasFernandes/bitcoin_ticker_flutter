@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:flutter/material.dart';
 import 'package:flutter/cupertino.dart';
 import 'coin_data.dart';
 import 'dart:io' show Platform;
@@ -15,6 +14,8 @@ class _PriceScreenState extends State<PriceScreen> {
   String? selectedCurrency = 'USD';
 
   Map<String,dynamic> coinDataMap = {};
+
+  CoinData coinData = CoinData();
 
   DropdownButton<String> androidDropdownItems() {
     List<DropdownMenuItem<String>> items = [];
@@ -32,6 +33,7 @@ class _PriceScreenState extends State<PriceScreen> {
         setState(() {
           selectedCurrency = value;
         });
+        getDataUpdateUI();
       },
     );
   }
@@ -48,6 +50,7 @@ class _PriceScreenState extends State<PriceScreen> {
         setState(() {
           selectedCurrency = currenciesList.elementAt(index);
         });
+        getDataUpdateUI();
       },
       children: items,
     );
@@ -63,30 +66,15 @@ class _PriceScreenState extends State<PriceScreen> {
     }
   }
 
-  dynamic getCardData(String crypto, String? currency) async {
-    var coinData = await CoinData().getCoinData(crypto, currency);
-    return coinData;
-
-  }
-
-  void getDataUpdateUI(){
-    for(String crypto in cryptoList){
-      getCardData(crypto, selectedCurrency).then(
-          (res) {
-            updateUI(res);
-          }
+  void getDataUpdateUI() {
+    coinData.getMapData(selectedCurrency)
+      .then(
+        (res) {
+          setState(() {
+            coinDataMap = res;
+          });
+        }
       );
-    }
-  }
-
-  void updateUI(dynamic coinData) {
-    setState(() {
-      coinDataMap[coinData['asset_id_base']] = {
-        'cryptoName': coinData['asset_id_base'],
-        'currencyName': coinData['asset_id_quote'],
-        'value': double.parse(coinData['rate'].toStringAsFixed(2))
-      };
-    });
   }
 
   List<Widget> getCards() {
@@ -116,6 +104,7 @@ class _PriceScreenState extends State<PriceScreen> {
     return Scaffold(
       appBar: AppBar(
         title: Center(child: Text('🤑 Coin Ticker')),
+        backgroundColor: Colors.lightBlue,
       ),
       body: Column(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
